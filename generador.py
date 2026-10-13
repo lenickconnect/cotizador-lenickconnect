@@ -29,7 +29,9 @@ TARIFAS = {
     }
 }
 
+
 def obtener_precios(destino, cant_pasajeros):
+    ars_tachado = 310000
     ars_inscripcion = 210000
 
     if destino in TARIFAS:
@@ -39,19 +41,24 @@ def obtener_precios(destino, cant_pasajeros):
         ars_inscripcion = TARIFAS[destino]["ars"]
     else:
         print(f"\n⚠️  {destino} requiere tarifa personalizada.")
-        usd_promo = int(input(f"Ingresá la tarifa en USD por persona para {destino}: ").strip())
+        usd_promo = int(
+            input(f"Ingresá la tarifa en USD por persona para {destino}: ").strip())
         usd_tachado = usd_promo + 200
 
     etiqueta_modalidad = "(Base Doble)" if cant_pasajeros == 2 else ""
 
-    precio_tachado_str = f"{usd_tachado} USD + inscripción ${ars_inscripcion:,}".replace(",", ".")
-    precio_promo_str = f"{usd_promo} USD + inscripción ${ars_inscripcion:,} {etiqueta_modalidad}".replace(",", ".").strip()
+    precio_tachado_str = f"{usd_tachado} USD + inscripción ${ars_tachado:,}".replace(
+        ",", ".")
+    precio_promo_str = f"{usd_promo} USD + inscripción ${ars_inscripcion:,} {etiqueta_modalidad}".replace(
+        ",", ".").strip()
 
     total_usd = usd_promo * cant_pasajeros
     total_ars = ars_inscripcion * cant_pasajeros
-    total_grupo_str = f"{total_usd} USD + inscripción ${total_ars:,}".replace(",", ".")
+    total_grupo_str = f"{total_usd} USD + inscripción ${total_ars:,}".replace(
+        ",", ".")
 
     return precio_tachado_str, precio_promo_str, total_grupo_str, usd_promo, ars_inscripcion, total_usd, total_ars
+
 
 def generar_propuesta():
     print("=" * 55)
@@ -65,14 +72,15 @@ def generar_propuesta():
     print("\n--- Seleccioná el Destino ---")
     print("1. Canasvieiras\n2. Ferrugem\n3. Camboriú\n4. Praia do Rosa")
     opc_destino = input("Opción (1-4) o escribí otro: ").strip()
-    destinos_map = {"1": "Canasvieiras", "2": "Ferrugem", "3": "Camboriú", "4": "Praia do Rosa"}
+    destinos_map = {"1": "Canasvieiras", "2": "Ferrugem",
+                    "3": "Camboriú", "4": "Praia do Rosa"}
     destino = destinos_map.get(opc_destino, opc_destino)
 
     # Selección de Tipo de Viaje
     print("\n--- Tipo de Viaje ---")
     print("1. Individual (1 pers.)\n2. Pareja (2 pers.)\n3. Dos amigos/as (2 pers.)\n4. Familiar / Grupal (Ingresar cantidad)")
     opc_grupo = input("Opción (1-4): ").strip()
-    
+
     if opc_grupo == "1":
         tipo_grupo = "Individual"
         cant_pasajeros = 1
@@ -85,16 +93,17 @@ def generar_propuesta():
     else:
         tipo_grupo = "Familiar / Grupal"
         cant_input = input("¿Cuántos pasajeros son en total?: ").strip()
-        cant_pasajeros = int(cant_input) if cant_input.isdigit() and int(cant_input) > 0 else 3
+        cant_pasajeros = int(cant_input) if cant_input.isdigit() and int(
+            cant_input) > 0 else 3
 
     # Selección de Alojamiento
     print("\n--- Tipo de Alojamiento ---")
-    print("1. Posada con desayuno\n2. Departamento céntrico\n3. Hotel con media pensión\n4. Estándar del paquete")
+    print("1. Posada con desayuno\n2. Departamento equipado a metros del mar\n3. Sumar con media pensión\n4. Alojamiento 7 noches")
     opc_aloj = input("Opción (1-4): ").strip()
     alojamientos = {
-        "1": "Posada céntrica con desayuno incluido",
+        "1": "Posada con desayuno",
         "2": "Departamento equipado a metros del mar",
-        "3": "Hotel con media pensión",
+        "3": "Sumar con media pensión",
         "4": "Alojamiento 7 noches"
     }
     alojamiento_texto = alojamientos.get(opc_aloj, "Alojamiento 7 noches")
@@ -102,11 +111,14 @@ def generar_propuesta():
     mes_viaje = input("\nMes del viaje (ej: Diciembre / Enero): ").strip()
 
     # Cotización del Dólar del día
-    tc_input = input("\nTipo de cambio del día USD/ARS (Ej: 1300, o presiona Enter para omitir): ").strip()
-    tipo_cambio = float(tc_input) if tc_input.replace(".", "", 1).isdigit() else 0.0
+    tc_input = input(
+        "\nTipo de cambio del día USD/ARS (Ej: 1300, o presiona Enter para omitir): ").strip()
+    tipo_cambio = float(tc_input) if tc_input.replace(
+        ".", "", 1).isdigit() else 0.0
 
     # Cálculo automático de precios
-    precio_tachado, precio_promo, total_grupo, usd_unitario, ars_unitario, total_usd, total_ars = obtener_precios(destino, cant_pasajeros)
+    precio_tachado, precio_promo, total_grupo, usd_unitario, ars_unitario, total_usd, total_ars = obtener_precios(
+        destino, cant_pasajeros)
 
     bloque_total_grupo = ""
     if cant_pasajeros > 1:
@@ -121,7 +133,7 @@ def generar_propuesta():
     if tipo_cambio > 0:
         ars_pesos_usd_unitario = usd_unitario * tipo_cambio
         total_unitario_pesos = ars_pesos_usd_unitario + ars_unitario
-        
+
         total_pesos_usd_grupo = total_usd * tipo_cambio
         total_grupo_pesos = total_pesos_usd_grupo + total_ars
 
@@ -173,7 +185,7 @@ Incluye:
 * Servicio en playa 
 * Bienvenida al destino 
 
-👉🏼 *Reservando hoy te llevás de regalo la estadía para el verano 2028 y una bonificación de $100.000 en la reserva de tu viaje.* 📲
+👉🏼 *Reservando hoy te llevás una cena de regalo y una bonificación de $100.000 en la reserva de tu viaje.* 📲
 
 🌐 Conocé más fotos y detalles de la experiencia en nuestra web:
 http://floripaconbreak.carrd.co/"""
@@ -208,10 +220,13 @@ http://floripaconbreak.carrd.co/"""
         carpeta_propuestas = os.path.join(escritorio, "Propuestas")
         os.makedirs(carpeta_propuestas, exist_ok=True)
 
-        cliente_limpio = "".join(c for c in cliente if c.isalnum() or c in (' ', '_', '-')).strip() or "cliente"
-        destino_limpio = "".join(c for c in destino if c.isalnum() or c in (' ', '_', '-')).strip() or "destino"
-        nombre_archivo = f"propuesta_{cliente_limpio}_{destino_limpio}.txt".lower().replace(" ", "_")
-        
+        cliente_limpio = "".join(c for c in cliente if c.isalnum() or c in (
+            ' ', '_', '-')).strip() or "cliente"
+        destino_limpio = "".join(c for c in destino if c.isalnum() or c in (
+            ' ', '_', '-')).strip() or "destino"
+        nombre_archivo = f"propuesta_{cliente_limpio}_{destino_limpio}.txt".lower(
+        ).replace(" ", "_")
+
         ruta_completa = os.path.join(carpeta_propuestas, nombre_archivo)
 
         with open(ruta_completa, "w", encoding="utf-8") as f:
@@ -237,6 +252,7 @@ http://floripaconbreak.carrd.co/"""
         print(f"\n❌ Error al crear el archivo: {e}")
 
     input("\nPresioná ENTER para cerrar...")
+
 
 if __name__ == "__main__":
     generar_propuesta()

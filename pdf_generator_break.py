@@ -9,7 +9,8 @@ from PIL import Image
 
 PAGE_WIDTH = 842.25
 PAGE_HEIGHT = 1190.25
-ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets") if "__file__" in locals() else "assets"
+ASSETS_DIR = os.path.join(os.path.dirname(
+    __file__), "assets") if "__file__" in locals() else "assets"
 
 # Diccionario de información turística y rutas por destino
 DATOS_DESTINOS = {
@@ -83,6 +84,7 @@ DATOS_DESTINOS = {
     }
 }
 
+
 def obtener_info_destino(destino):
     """Devuelve la información turística y paradas de ruta de un destino."""
     if destino in DATOS_DESTINOS:
@@ -104,6 +106,7 @@ def obtener_info_destino(destino):
             "una experiencia placentera y segura."
         )
     }
+
 
 def obtener_alojamientos_destino(destino, precio_usd, base_doble_exclusiva=False):
     """
@@ -241,10 +244,11 @@ def obtener_alojamientos_destino(destino, precio_usd, base_doble_exclusiva=False
             ]
         }
 
+
 def calcular_cronograma(fecha_viernes):
     """
     Calcula de manera exacta y automática el cronograma partiendo de un Viernes de salida:
-    - Salida: Viernes noche (22:00 hs)
+    - Salida: Viernes noche (23:00 hs)
     - Llegada / Check-in: Domingo mediodía (2 días después)
     - Estadía: Rango de Domingo a Domingo (7 noches)
     - Check-out / Regreso: Domingo por la tarde
@@ -261,7 +265,8 @@ def calcular_cronograma(fecha_viernes):
 
     f_salida = fecha_viernes                             # Viernes
     f_checkin = f_salida + datetime.timedelta(days=2)    # Domingo
-    f_checkout = f_checkin + datetime.timedelta(days=7)  # Domingo siguiente (7 noches)
+    # Domingo siguiente (7 noches)
+    f_checkout = f_checkin + datetime.timedelta(days=7)
     f_arribo = f_salida + datetime.timedelta(days=10)    # Lunes
 
     meses = {
@@ -280,10 +285,10 @@ def calcular_cronograma(fecha_viernes):
         anio = f" {d.year}" if incluir_anio else ""
         return f"{prefijo_dia}{d.day:02d} {mes}{anio}"
 
-    salida_str = f"{formatear(f_salida)} - 22:00 horas"
+    salida_str = f"{formatear(f_salida)} - 23:00 horas"
     checkin_str = f"{formatear(f_checkin)}"
     checkout_str = f"{formatear(f_checkout)} (tarde)"
-    arribo_str = f"{formatear(f_arribo)} (tarde/noche)"
+    arribo_str = f"{formatear(f_arribo)} (tarde)"
 
     # Formato explícito requerido para la página 2:
     estadia_itinerario = f"{formatear(f_checkin, incluir_dia=True, incluir_anio=False)} a {formatear(f_checkout, incluir_dia=True, incluir_anio=False)} - 7 noches"
@@ -304,9 +309,10 @@ def calcular_cronograma(fecha_viernes):
         "mes_nombre": meses[f_salida.month].capitalize()
     }
 
+
 def obtener_nombre_base(cant_pasajeros, base_doble_exclusiva=False):
     if cant_pasajeros == 2 and base_doble_exclusiva:
-        return "Base doble (Exclusiva)"
+        return "Base doble exclusiva"
     nombres = {
         1: "Base individual",
         2: "Base doble",
@@ -316,6 +322,7 @@ def obtener_nombre_base(cant_pasajeros, base_doble_exclusiva=False):
         6: "Base séxtuple"
     }
     return nombres.get(cant_pasajeros, f"Base {cant_pasajeros} personas")
+
 
 def draw_pin_icon(c, x, y, size=16, color=colors.HexColor("#1A1A1A")):
     c.saveState()
@@ -331,16 +338,20 @@ def draw_pin_icon(c, x, y, size=16, color=colors.HexColor("#1A1A1A")):
     c.circle(x, y + size * 0.45, size * 0.16, stroke=0, fill=1)
     c.restoreState()
 
+
 def draw_footer(c):
     c.saveState()
     logo_path = os.path.join(ASSETS_DIR, "logo_break.png")
     if os.path.exists(logo_path):
-        c.drawImage(logo_path, 650, 42, width=115, height=44, preserveAspectRatio=True, mask='auto')
-    
+        c.drawImage(logo_path, 650, 42, width=115, height=44,
+                    preserveAspectRatio=True, mask='auto')
+
     c.setFont("Helvetica", 9)
     c.setFillColor(colors.HexColor("#666666"))
-    c.drawRightString(765, 30, "Tucuman 219, primer piso. Edificio Proa. Oficina Córdoba")
+    c.drawRightString(
+        765, 30, "Tucuman 219, primer piso. Edificio Proa. Oficina Córdoba")
     c.restoreState()
+
 
 def draw_paragraph(c, text, x, y, width, font_name="Helvetica", font_size=11, leading=15, text_color=colors.HexColor("#333333")):
     style = ParagraphStyle(
@@ -355,20 +366,21 @@ def draw_paragraph(c, text, x, y, width, font_name="Helvetica", font_size=11, le
     p.drawOn(c, x, y - h)
     return h
 
+
 def generar_pdf_break(
-    cliente="Oriana",
+    cliente="LeNick",
     destino="Canasvieiras",
     precio_usd=629,
     ars_inscripcion=210000,
     cronograma=None,
     cant_pasajeros=5,
     base_doble_exclusiva=False,
-    tipo_alojamiento="Departamento completo. Privado Break",
+    tipo_alojamiento="Departamento equipado completo",
     fecha_cotizacion=None,
     agente_tel="351 505 2499",
     agente_email="nicoguemanbreak@gmail.com",
     lugar_salida="Terminal de Córdoba",
-    plataforma="80 a 90 - 22:00 horas"
+    plataforma="80 a 90 - 23:00 horas"
 ):
     if not fecha_cotizacion:
         fecha_cotizacion = datetime.datetime.now().strftime("%d %B %Y").upper()
@@ -377,7 +389,8 @@ def generar_pdf_break(
         cronograma = calcular_cronograma(datetime.date(2027, 1, 22))
 
     info_dest = obtener_info_destino(destino)
-    aloj_info = obtener_alojamientos_destino(destino, precio_usd, base_doble_exclusiva=base_doble_exclusiva)
+    aloj_info = obtener_alojamientos_destino(
+        destino, precio_usd, base_doble_exclusiva=base_doble_exclusiva)
 
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=(PAGE_WIDTH, PAGE_HEIGHT))
@@ -404,7 +417,8 @@ def generar_pdf_break(
 
     hero_path = os.path.join(ASSETS_DIR, "hero_p1.png")
     if os.path.exists(hero_path):
-        c.drawImage(hero_path, 70, 500, width=695, height=480, preserveAspectRatio=True)
+        c.drawImage(hero_path, 70, 500, width=695,
+                    height=480, preserveAspectRatio=True)
 
     y_tarifa_top = 460
     y_tarifa_bottom = 350
@@ -545,7 +559,8 @@ def generar_pdf_break(
     c.setFont("Helvetica-Bold", 13)
     c.setFillColor(colors.HexColor("#222222"))
     # Llegada con fecha completa: 'Llegada: Lunes 02 de Febrero (tarde)'
-    arribo_fecha = cronograma.get("arribo_fecha_str", cronograma.get("dia_llegada_nombre", "Lunes"))
+    arribo_fecha = cronograma.get(
+        "arribo_fecha_str", cronograma.get("dia_llegada_nombre", "Lunes"))
     c.drawString(360, 560, f"Llegada: {arribo_fecha} (tarde)")
 
     c.setFont("Helvetica", 11)
@@ -617,9 +632,11 @@ def generar_pdf_break(
 
     banner_path = os.path.join(ASSETS_DIR, "banner_p3.jpg")
     if os.path.exists(banner_path):
-        c.drawImage(banner_path, 70, 440, width=695, height=220, preserveAspectRatio=False)
+        c.drawImage(banner_path, 70, 440, width=695,
+                    height=220, preserveAspectRatio=False)
 
-    draw_paragraph(c, info_dest["resena"], 70, 415, 695, font_size=11, leading=16, text_color=colors.HexColor("#444444"))
+    draw_paragraph(c, info_dest["resena"], 70, 415, 695, font_size=11,
+                   leading=16, text_color=colors.HexColor("#444444"))
 
     draw_footer(c)
     c.showPage()
@@ -652,11 +669,14 @@ def generar_pdf_break(
     h3 = os.path.join(ASSETS_DIR, "hotel_3.jpg")
 
     if os.path.exists(h1):
-        c.drawImage(h1, 70, h_y, width=h_w, height=h_h, preserveAspectRatio=False)
+        c.drawImage(h1, 70, h_y, width=h_w, height=h_h,
+                    preserveAspectRatio=False)
     if os.path.exists(h2):
-        c.drawImage(h2, 307, h_y, width=h_w, height=h_h, preserveAspectRatio=False)
+        c.drawImage(h2, 307, h_y, width=h_w, height=h_h,
+                    preserveAspectRatio=False)
     if os.path.exists(h3):
-        c.drawImage(h3, 544, h_y, width=h_w, height=h_h, preserveAspectRatio=False)
+        c.drawImage(h3, 544, h_y, width=h_w, height=h_h,
+                    preserveAspectRatio=False)
 
     # Secciones dinámicas de categorías de alojamiento
     y_sec = 695
@@ -679,7 +699,8 @@ def generar_pdf_break(
     c.drawString(70, 420, "INFORMACIÓN IMPORTANTE:")
     c.setFont("Helvetica", 10.5)
     c.setFillColor(colors.HexColor("#444444"))
-    c.drawString(70, 400, "Para el Check in se debera aguardar el aviso de la persona a cargo del grupo, quien entrega llaves y equipajes.")
+    c.drawString(
+        70, 400, "Para el Check in se debera aguardar el aviso de la persona a cargo del grupo, quien entrega llaves y equipajes.")
     c.drawString(70, 384, "Horario internacional despues de las 14:00 hs.")
 
     # Seguro de viaje
@@ -693,10 +714,12 @@ def generar_pdf_break(
 
     c.setFont("Helvetica-Bold", 11.5)
     c.setFillColor(colors.HexColor("#222222"))
-    c.drawString(70, 255, "Opcional asistencia médica a traves de Asisst Travel.")
+    c.drawString(
+        70, 255, "Opcional asistencia médica a traves de Asisst Travel.")
     c.setFont("Helvetica", 10.5)
     c.setFillColor(colors.HexColor("#444444"))
-    c.drawString(70, 237, "La asistencia contratada con la agencia, incluye todos los gastos en destino ocasionados por la atención médica.")
+    c.drawString(
+        70, 237, "La asistencia contratada con la agencia, incluye todos los gastos en destino ocasionados por la atención médica.")
 
     draw_footer(c)
     c.showPage()
@@ -732,11 +755,14 @@ def generar_pdf_break(
     b3 = os.path.join(ASSETS_DIR, "beach_3.jpg")
 
     if os.path.exists(b1):
-        c.drawImage(b1, 70, b_y, width=b_w, height=b_h, preserveAspectRatio=False)
+        c.drawImage(b1, 70, b_y, width=b_w, height=b_h,
+                    preserveAspectRatio=False)
     if os.path.exists(b2):
-        c.drawImage(b2, 307, b_y, width=b_w, height=b_h, preserveAspectRatio=False)
+        c.drawImage(b2, 307, b_y, width=b_w, height=b_h,
+                    preserveAspectRatio=False)
     if os.path.exists(b3):
-        c.drawImage(b3, 544, b_y, width=b_w, height=b_h, preserveAspectRatio=False)
+        c.drawImage(b3, 544, b_y, width=b_w, height=b_h,
+                    preserveAspectRatio=False)
 
     c.setFont("Helvetica-Bold", 13)
     c.setFillColor(colors.HexColor("#222222"))
@@ -786,9 +812,11 @@ def generar_pdf_break(
     qr_path = os.path.join(ASSETS_DIR, "qr_code.png")
     desc_path = os.path.join(ASSETS_DIR, "descubri_mas.png")
     if os.path.exists(desc_path):
-        c.drawImage(desc_path, 70, 240, width=80, height=26, preserveAspectRatio=True, mask='auto')
+        c.drawImage(desc_path, 70, 240, width=80, height=26,
+                    preserveAspectRatio=True, mask='auto')
     if os.path.exists(qr_path):
-        c.drawImage(qr_path, 70, 140, width=90, height=90, preserveAspectRatio=True)
+        c.drawImage(qr_path, 70, 140, width=90,
+                    height=90, preserveAspectRatio=True)
 
     draw_footer(c)
     c.showPage()
@@ -796,6 +824,7 @@ def generar_pdf_break(
     c.save()
     buffer.seek(0)
     return buffer.getvalue()
+
 
 if __name__ == "__main__":
     crono = calcular_cronograma(datetime.date(2027, 1, 22))

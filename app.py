@@ -46,11 +46,11 @@ TARIFAS_PREDEFINIDAS = {
 }
 
 OPCIONES_ALOJAMIENTO = [
-    "Departamento completo. Estandar Break",
-    "Posada con desayuno incluido",
-    "Departamento equipado. Vip Break",
+    "Departamento equipado completo",
+    "Departamento equipado premium",
+    "Incluir desayunos",
     "Incluir media pensión",
-    "Alojamiento 7 noches"
+    "Solo alojamiento"
 ]
 
 # Inicializar historial en sesión
@@ -59,29 +59,35 @@ if "historial" not in st.session_state:
 
 # --- Encabezado ---
 st.title("🌴 Break Tienda de Viajes")
-st.subheader("Generador Integral de Propuestas e Itinerarios Oficiales (5 Páginas)")
+st.subheader("Generador Integral de Propuestas e Itinerarios (5 Páginas)")
 
 # --- Barra Lateral: Parámetros ---
 with st.sidebar:
     st.header("📋 Datos del Cliente")
-    cliente = st.text_input("Nombre del cliente", value="Oriana").strip()
-    telefono = st.text_input("Teléfono / WhatsApp (ej: 5491112345678)", value="").strip()
+    cliente = st.text_input("Nombre del cliente", value="LeNick").strip()
+    telefono = st.text_input(
+        "Teléfono / WhatsApp (ej: 5491112345678)", value="").strip()
 
     st.markdown("---")
     st.header("🏖️ Configuración del Paquete")
 
     # Selección de Destino
-    opciones_destino = ["Canasvieiras", "Ferrugem", "Camboriú", "Praia do Rosa", "Otro personalizado..."]
+    opciones_destino = ["Canasvieiras", "Ferrugem",
+                        "Camboriú", "Praia do Rosa", "Otro personalizado..."]
     destino_seleccionado = st.selectbox("Destino", opciones_destino)
 
     if destino_seleccionado == "Otro personalizado...":
-        destino = st.text_input("Nombre del destino personalizado", value="Florianópolis").strip()
-        custom_usd_promo = st.number_input("Tarifa USD por persona", min_value=100, max_value=5000, value=629, step=10)
+        destino = st.text_input(
+            "Nombre del destino personalizado", value="Florianópolis").strip()
+        custom_usd_promo = st.number_input(
+            "Tarifa USD por persona", min_value=100, max_value=5000, value=629, step=10)
         custom_usd_tachado = custom_usd_promo + 200
-        custom_ars = st.number_input("Inscripción en ARS por persona", min_value=0, max_value=2000000, value=210000, step=10000)
+        custom_ars = st.number_input(
+            "Inscripción en ARS por persona", min_value=0, max_value=2000000, value=210000, step=10000)
     elif destino_seleccionado == "Praia do Rosa":
         destino = "Praia do Rosa"
-        custom_usd_promo = st.number_input("Tarifa USD por persona para Praia do Rosa", min_value=100, max_value=5000, value=680, step=10)
+        custom_usd_promo = st.number_input(
+            "Tarifa USD por persona para Praia do Rosa", min_value=100, max_value=5000, value=680, step=10)
         custom_usd_tachado = custom_usd_promo + 200
         custom_ars = 210000
     else:
@@ -96,20 +102,23 @@ with st.sidebar:
     )
     cronograma = calcular_cronograma(fecha_input)
     if fecha_input.weekday() != 4:
-        st.caption(f"ℹ️ Ajustado al viernes de partida: **{cronograma['salida_str'].split(' - ')[0]}**")
+        st.caption(
+            f"ℹ️ Ajustado al viernes de partida: **{cronograma['salida_str'].split(' - ')[0]}**")
 
     # Visualización resumida del cronograma en la barra lateral
     with st.expander("🗓️ Cronograma Calculado", expanded=True):
         st.markdown(f"🚌 **Salida:** {cronograma['salida_str']}")
         st.markdown(f"🏨 **Llegada / Check-in:** {cronograma['checkin_str']}")
-        st.markdown(f"🏖️ **Estadía Alojamiento:** {cronograma['estadia_itinerario']}")
+        st.markdown(
+            f"🏖️ **Estadía Alojamiento:** {cronograma['estadia_itinerario']}")
         st.markdown(f"🔄 **Check-out / Regreso:** {cronograma['checkout_str']}")
         st.markdown(f"🏁 **Arribo a Origen:** {cronograma['arribo_str']}")
 
     # Tipo de Viaje y Pasajeros
     tipo_viaje = st.selectbox(
         "Tipo de viaje",
-        ["Familiar / Grupal", "En Pareja (2 personas)", "Dos amigos/as (2 personas)", "Individual (1 persona)"]
+        ["Familiar / Grupal",
+            "En Pareja (2 personas)", "Dos amigos/as (2 personas)", "Individual (1 persona)"]
     )
 
     if tipo_viaje == "Individual (1 persona)":
@@ -122,7 +131,8 @@ with st.sidebar:
         cant_pasajeros = 2
         tipo_grupo = "Doble (2 personas)"
     else:
-        cant_pasajeros = st.number_input("Cantidad total de pasajeros", min_value=1, max_value=60, value=5, step=1)
+        cant_pasajeros = st.number_input(
+            "Cantidad total de pasajeros", min_value=1, max_value=60, value=5, step=1)
         tipo_grupo = "Familiar / Grupal"
 
     # Recargo Base Doble Exclusiva (solo para 2 pasajeros)
@@ -133,27 +143,33 @@ with st.sidebar:
             help="Lugar exclusivo para 2 personas. Se suma un adicional de 100 USD por persona sobre la tarifa base."
         )
         if base_doble_exclusiva:
-            st.caption("✅ Recargo aplicado: +100 USD por persona (lugar exclusivo para 2).")
+            st.caption(
+                "✅ Recargo aplicado: +100 USD por persona (lugar exclusivo para 2).")
 
     # Alojamiento
-    alojamiento_sel = st.selectbox("Tipo de Alojamiento", OPCIONES_ALOJAMIENTO + ["Personalizado..."])
+    alojamiento_sel = st.selectbox(
+        "Tipo de Alojamiento", OPCIONES_ALOJAMIENTO + ["Personalizado..."])
     if alojamiento_sel == "Personalizado...":
-        alojamiento_texto = st.text_input("Descripción del alojamiento", value="Exclusivo con desayuno")
+        alojamiento_texto = st.text_input(
+            "Descripción del alojamiento", value="Exclusivo con desayuno")
     else:
         alojamiento_texto = alojamiento_sel
 
     st.markdown("---")
     st.header("👤 Datos del Asesor y Oficina")
     agente_tel = st.text_input("Teléfono del Agente", value="351 505 2499")
-    agente_email = st.text_input("Email de Contacto", value="nicoguemanbreak@gmail.com")
+    agente_email = st.text_input(
+        "Email de Contacto", value="nicoguemanbreak@gmail.com")
 
     st.markdown("---")
     st.header("💵 Cotización Dólar")
-    tipo_cambio = st.number_input("Tipo de cambio ARS / USD (opcional)", min_value=0.0, value=1300.0, step=10.0)
+    tipo_cambio = st.number_input(
+        "Tipo de cambio ARS / USD (opcional)", min_value=0.0, value=1300.0, step=10.0)
 
 # --- Información del destino seleccionado ---
 info_dest = obtener_info_destino(destino)
-puntos_fuertes_str = "\n".join([f"- {pf}" for pf in info_dest["puntos_fuertes"]])
+puntos_fuertes_str = "\n".join(
+    [f"- {pf}" for pf in info_dest["puntos_fuertes"]])
 
 # --- Lógica de Precios ---
 if destino in TARIFAS_PREDEFINIDAS:
@@ -174,12 +190,15 @@ etiqueta_modalidad = f"(Base {cant_pasajeros} pax)" if cant_pasajeros > 1 else "
 if base_doble_exclusiva:
     etiqueta_modalidad += " - Exclusivo"
 
-precio_tachado_str = f"{usd_tachado} USD + inscripción ${ars_inscripcion:,}".replace(",", ".")
-precio_promo_str = f"{usd_promo} USD + inscripción ${ars_inscripcion:,} {etiqueta_modalidad}".replace(",", ".").strip()
+precio_tachado_str = f"{usd_tachado} USD + inscripción $ 310.000".replace(
+    ",", ".")
+precio_promo_str = f"{usd_promo} USD + inscripción ${ars_inscripcion:,} {etiqueta_modalidad}".replace(
+    ",", ".").strip()
 
 total_usd = usd_promo * cant_pasajeros
 total_ars = ars_inscripcion * cant_pasajeros
-total_grupo_str = f"{total_usd} USD + inscripción ${total_ars:,}".replace(",", ".")
+total_grupo_str = f"{total_usd} USD + inscripción ${total_ars:,}".replace(
+    ",", ".")
 
 bloque_total_grupo = ""
 if cant_pasajeros > 1:
@@ -198,7 +217,7 @@ ars_pesos_usd_unitario = 0
 if tipo_cambio > 0:
     ars_pesos_usd_unitario = usd_promo * tipo_cambio
     total_unitario_pesos = ars_pesos_usd_unitario + ars_inscripcion
-    
+
     total_pesos_usd_grupo = total_usd * tipo_cambio
     total_grupo_pesos = total_pesos_usd_grupo + total_ars
 
@@ -249,7 +268,7 @@ Incluye:
 * Servicio en playa 
 * Bienvenida al destino 
 
-👉🏼 *Reservando hoy te llevás de regalo la estadía para el verano 2028 y una bonificación de $100.000 en la reserva de tu viaje.* 📲
+👉🏼 *Reservando hoy te llevás de regalo una cena despedida de Brasil y una bonificación de $100.000 en la reserva de tu viaje.* 📲
 
 🌐 Conocé más fotos y detalles de la experiencia en nuestra web:
 http://floripaconbreak.carrd.co/"""
@@ -288,10 +307,14 @@ pdf_bytes = generar_pdf_break(
     base_doble_exclusiva=base_doble_exclusiva
 )
 
-cliente_slug = "".join(c for c in cliente if c.isalnum() or c in (' ', '_', '-')).strip() or "cliente"
-destino_slug = "".join(c for c in destino if c.isalnum() or c in (' ', '_', '-')).strip() or "destino"
-nombre_archivo_pdf = f"itinerario_break_{cliente_slug}_{destino_slug}.pdf".lower().replace(" ", "_")
-nombre_archivo_propuesta = f"propuesta_{cliente_slug}_{destino_slug}.txt".lower().replace(" ", "_")
+cliente_slug = "".join(c for c in cliente if c.isalnum()
+                       or c in (' ', '_', '-')).strip() or "cliente"
+destino_slug = "".join(c for c in destino if c.isalnum()
+                       or c in (' ', '_', '-')).strip() or "destino"
+nombre_archivo_pdf = f"itinerario_break_{cliente_slug}_{destino_slug}.pdf".lower(
+).replace(" ", "_")
+nombre_archivo_propuesta = f"propuesta_{cliente_slug}_{destino_slug}.txt".lower(
+).replace(" ", "_")
 
 # --- Dashboard: Métricas principales ---
 st.markdown("### 📊 Resumen de la Cotización")
@@ -341,9 +364,9 @@ tab_whatsapp, tab_cronograma_view, tab_ficha, tab_exportar = st.tabs([
 # TAB 1: WhatsApp
 with tab_whatsapp:
     st.markdown("#### Vista previa del mensaje listo para enviar")
-    
+
     col_wa1, col_wa2 = st.columns([3, 1])
-    
+
     with col_wa1:
         st.text_area(
             "Mensaje formateado (copiar y pegar directamente en WhatsApp):",
@@ -353,15 +376,17 @@ with tab_whatsapp:
 
     with col_wa2:
         st.markdown("##### 🚀 Acciones Rápidas")
-        
+
         # Enlace directo a WhatsApp si se introdujo número
         if telefono:
             telefono_limpio = "".join(filter(str.isdigit, telefono))
             wa_encoded = urllib.parse.quote(mensaje_cliente)
             wa_link = f"https://api.whatsapp.com/send?phone={telefono_limpio}&text={wa_encoded}"
-            st.link_button("📲 Abrir en WhatsApp con el mensaje", wa_link, use_container_width=True)
+            st.link_button("📲 Abrir en WhatsApp con el mensaje",
+                           wa_link, use_container_width=True)
         else:
-            st.info("💡 Agregá el número del cliente en la barra lateral para habilitar el botón de envío directo por WhatsApp.")
+            st.info(
+                "💡 Agregá el número del cliente en la barra lateral para habilitar el botón de envío directo por WhatsApp.")
 
         # Botón para descargar PDF desde Acciones Rápidas
         st.download_button(
@@ -388,8 +413,9 @@ with tab_whatsapp:
 
 # TAB 2: Cronograma Detallado
 with tab_cronograma_view:
-    st.markdown(f"#### 🗓️ Cronograma Oficial: {destino} ({cronograma['rango_total']})")
-    
+    st.markdown(
+        f"#### 🗓️ Cronograma Oficial: {destino} ({cronograma['rango_total']})")
+
     col_c1, col_c2 = st.columns(2)
     with col_c1:
         st.info(f"""
@@ -413,14 +439,15 @@ with tab_cronograma_view:
         • Salida desde destino: {cronograma['checkout_str']}
         • Arribo a Córdoba: {cronograma['arribo_str']}
         """)
-    
-    st.markdown(f"**Parada de ruta destacada:** {info_dest['parada_ruta_detalle']}")
+
+    st.markdown(
+        f"**Parada de ruta destacada:** {info_dest['parada_ruta_detalle']}")
 
 # TAB 3: Ficha Interna
 with tab_ficha:
     st.markdown("#### Datos de Gestión y Conversión de Moneda")
     st.code(ficha_interna, language="text")
-    
+
     if tipo_cambio > 0:
         st.markdown("##### 🔍 Desglose de Costos en ARS")
         desglose_data = {
@@ -443,7 +470,7 @@ with tab_ficha:
 # TAB 4: Guardar / Exportar
 with tab_exportar:
     st.markdown("#### Opciones de Descarga y Guardado")
-    
+
     col_exp1, col_exp2, col_exp3 = st.columns(3)
 
     with col_exp1:
@@ -471,7 +498,8 @@ with tab_exportar:
                 escritorio = os.path.join(os.path.expanduser("~"), "Desktop")
                 carpeta_propuestas = os.path.join(escritorio, "Propuestas")
                 os.makedirs(carpeta_propuestas, exist_ok=True)
-                ruta_completa = os.path.join(carpeta_propuestas, nombre_archivo_propuesta)
+                ruta_completa = os.path.join(
+                    carpeta_propuestas, nombre_archivo_propuesta)
 
                 with open(ruta_completa, "w", encoding="utf-8") as f:
                     f.write(contenido_archivo)
