@@ -166,22 +166,16 @@ def obtener_alojamientos_destino(destino, precio_usd, base_doble_exclusiva=False
             ],
             "secciones": [
                 {
-                    "titulo": f"POSADAS EN FERRUGEM - Belleza Pura | Pantai | Barbarana - Desde {precio_usd} UsD",
-                    "items": [
-                        # Descripción introductoria ya está en items_generales — no se repite aquí
-                        "Habitaciones en base Doble | Triple | Cuádruple | Quíntuple.",
-                        "Zona privilegiada a metros de los principales paradores y la playa.",
-                        "Parrillas, áreas de descanso y solarium común.",
-                        "Incluye ropa de cama y servicio de recepción."
-                    ]
-                },
-                {
                     "titulo": "COMODIDADES & SERVICIOS EXCLUSIVOS EN FERRUGEM",
                     "items": [
                         "Ingreso coordinado con el staff de Break.",
+                        "Habitaciones en base Doble | Triple | Cuádruple | Quíntuple con baño privado.",
+                        "Zona privilegiada a metros de los principales paradores y la playa.",
                         "Cocina compartida totalmente equipada para mayor comodidad y ahorro.",
+                        "Parrillas, áreas de descanso, playroom, pileta y solarium común.",
                         "Espacios de esparcimiento ideales para grupos y parejas.",
-                        "Seguridad y custodia durante toda la estadía."
+                        "Seguridad y custodia durante toda la estadía.",
+                        "Incluye ropa de cama y servicio de recepción."
                     ]
                 }
             ]
@@ -199,23 +193,17 @@ def obtener_alojamientos_destino(destino, precio_usd, base_doble_exclusiva=False
             ],
             "secciones": [
                 {
-                    "titulo": f"COMPLEJOS EN PRAIA DO ROSA - In Box | Prazeres do Rosa - Desde {precio_usd} UsD",
-                    "items": [
-                        # Nombres de complejos ya están en items_generales — no se repiten aquí
-                        "Departamentos privados con cocina completa, vajilla y comodidades.",
-                        "Habitaciones en base Doble | Triple | Cuádruple.",
-                        "Vistas panorámicas a los morros y áreas verdes.",
-                        "Espacios de solarium, terrazas y decks privados.",
-                        "Incluye ropa de cama y servicio de recepción."
-                    ]
-                },
-                {
                     "titulo": "COMODIDADES EXCLUSIVAS DEL ROSA",
                     "items": [
+                        "Departamentos privados con cocina completa, vajilla y comodidades.",
+                        "Habitaciones en base Doble | Triple | Cuádruple con baño privado.",
+                        "Vistas panorámicas a los morros y áreas verdes.",
+                        "Espacios de solarium, terrazas y decks privados.",
                         "Cercanía a los mejores restaurantes y bares del Centrinho.",
                         "Parrillas individuales y compartidas.",
                         "Estacionamiento privado dentro del predio.",
-                        "Atención permanente del equipo de Break en destino."
+                        "Atención permanente del equipo de Break en destino.",
+                        "Incluye ropa de cama y servicio de recepción."
                     ]
                 }
             ]
@@ -380,7 +368,8 @@ def generar_pdf_break(
     agente_tel="351 505 2499",
     agente_email="nicoguemanbreak@gmail.com",
     lugar_salida="Terminal de Córdoba",
-    plataforma="80 a 90 - 23:00 horas"
+    plataforma="80 a 90 - 23:00 horas",
+    **kwargs
 ):
     if not fecha_cotizacion:
         fecha_cotizacion = datetime.datetime.now().strftime("%d %B %Y").upper()
@@ -445,7 +434,7 @@ def generar_pdf_break(
     c.setFillColor(colors.HexColor("#444444"))
     c.drawString(70, 365, cronograma['rango_total'])
 
-    # Columna 2: Precios destacados
+    # Columna 2: Precios destacados (Únicamente costo total final limpio)
     c.setFont("Helvetica-Bold", 20)
     c.setFillColor(colors.HexColor("#1A1A1A"))
     c.drawString(340, 420, usd_str)

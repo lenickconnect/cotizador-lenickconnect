@@ -177,10 +177,14 @@ if destino in TARIFAS_PREDEFINIDAS:
     usd_promo = TARIFAS_PREDEFINIDAS[destino][tipo_base]["usd_promo"]
     usd_tachado = TARIFAS_PREDEFINIDAS[destino][tipo_base]["usd_tachado"]
     ars_inscripcion = TARIFAS_PREDEFINIDAS[destino]["ars"]
+    ars_tachado = TARIFAS_PREDEFINIDAS[destino].get("ars_tachado", 310000)
+    ars_bonificacion = TARIFAS_PREDEFINIDAS[destino].get("ars_bonificacion", 100000)
 else:
     usd_promo = custom_usd_promo
     usd_tachado = custom_usd_tachado
     ars_inscripcion = custom_ars
+    ars_tachado = 310000
+    ars_bonificacion = 100000 if ars_tachado > ars_inscripcion else 0
 
 # Recargo Base Doble Exclusiva: +100 USD por persona
 if base_doble_exclusiva:
@@ -190,7 +194,7 @@ etiqueta_modalidad = f"(Base {cant_pasajeros} pax)" if cant_pasajeros > 1 else "
 if base_doble_exclusiva:
     etiqueta_modalidad += " - Exclusivo"
 
-precio_tachado_str = f"{usd_tachado} USD + inscripción $ 310.000".replace(
+precio_tachado_str = f"{usd_tachado} USD + inscripción ${ars_tachado:,}".replace(
     ",", ".")
 precio_promo_str = f"{usd_promo} USD + inscripción ${ars_inscripcion:,} {etiqueta_modalidad}".replace(
     ",", ".").strip()
@@ -330,7 +334,8 @@ with col_m1:
 with col_m2:
     st.metric(
         label="Inscripción / persona",
-        value=f"${ars_inscripcion:,.0f} ARS".replace(",", ".")
+        value=f"${ars_inscripcion:,.0f} ARS".replace(",", "."),
+        delta=f"-${ars_bonificacion:,.0f} Bonif." if ars_bonificacion > 0 else None
     )
 
 with col_m3:
@@ -450,8 +455,9 @@ with tab_ficha:
 
     if tipo_cambio > 0:
         st.markdown("##### 🔍 Desglose de Costos en ARS")
+        concepto_inscripcion = f"Inscripción en ARS (Lista ${ars_tachado:,.0f} - Bonif. ${ars_bonificacion:,.0f})".replace(",", ".") if ars_bonificacion > 0 else "Inscripción en ARS"
         desglose_data = {
-            "Concepto": ["Tarifa Base (USD)", "Inscripción en ARS", "Total por persona", "Total Todo el Grupo"],
+            "Concepto": ["Tarifa Base (USD)", concepto_inscripcion, "Total por persona", "Total Todo el Grupo"],
             "Monto por Persona": [
                 f"${ars_pesos_usd_unitario:,.0f} ARS".replace(",", "."),
                 f"${ars_inscripcion:,.0f} ARS".replace(",", "."),
