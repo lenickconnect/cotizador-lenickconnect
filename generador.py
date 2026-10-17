@@ -13,13 +13,16 @@ except ImportError:
 # Base de datos de tarifas por persona
 TARIFAS = {
     "Canasvieiras": {
-        "individual": {"usd_promo": 599, "usd_tachado": 800},
-        "doble":      {"usd_promo": 699, "usd_tachado": 899},
+        # Posada Classic: $629 USD | Posada VIP: $699 USD
+        "classic":    {"usd_promo": 629, "usd_tachado": 850},
+        "vip":        {"usd_promo": 699, "usd_tachado": 950},
+        "individual": {"usd_promo": 629, "usd_tachado": 850},
+        "doble":      {"usd_promo": 629, "usd_tachado": 850},
         "ars": 210000
     },
     "Ferrugem": {
-        "individual": {"usd_promo": 549, "usd_tachado": 750},
-        "doble":      {"usd_promo": 649, "usd_tachado": 850},
+        "individual": {"usd_promo": 649, "usd_tachado": 750},
+        "doble":      {"usd_promo": 649, "usd_tachado": 750},
         "ars": 210000
     },
     "Camboriú": {
@@ -30,12 +33,20 @@ TARIFAS = {
 }
 
 
-def obtener_precios(destino, cant_pasajeros):
+def obtener_precios(destino, cant_pasajeros, alojamiento_texto="Posada Classic"):
     ars_tachado = 310000
     ars_inscripcion = 210000
 
     if destino in TARIFAS:
-        tipo_base = "doble" if cant_pasajeros == 2 else "individual"
+        # Para Canasvieiras la tarifa base depende del tipo de alojamiento
+        if destino == "Canasvieiras":
+            if alojamiento_texto == "Posada VIP":
+                tipo_base = "vip"
+            else:
+                tipo_base = "classic"
+        else:
+            tipo_base = "doble" if cant_pasajeros == 2 else "individual"
+
         usd_promo = TARIFAS[destino][tipo_base]["usd_promo"]
         usd_tachado = TARIFAS[destino][tipo_base]["usd_tachado"]
         ars_inscripcion = TARIFAS[destino]["ars"]
@@ -96,19 +107,49 @@ def generar_propuesta():
         cant_pasajeros = int(cant_input) if cant_input.isdigit() and int(
             cant_input) > 0 else 3
 
-    # Selección de Alojamiento
+    # Selección de Alojamiento (únicamente 3)
     print("\n--- Tipo de Alojamiento ---")
-    print("1. Posada con desayuno\n2. Departamento equipado a metros del mar\n3. Sumar con media pensión\n4. Alojamiento 7 noches")
-    opc_aloj = input("Opción (1-4): ").strip()
+    print("1. Posada Classic\n2. Posada VIP\n3. Solo Alojamiento")
+    opc_aloj = input("Opción (1-3): ").strip()
     alojamientos = {
-        "1": "Posada con desayuno",
-        "2": "Departamento equipado a metros del mar",
-        "3": "Sumar con media pensión",
-        "4": "Alojamiento 7 noches"
+        "1": "Posada Classic",
+        "2": "Posada VIP",
+        "3": "Solo Alojamiento"
     }
-    alojamiento_texto = alojamientos.get(opc_aloj, "Alojamiento 7 noches")
+    alojamiento_texto = alojamientos.get(opc_aloj, "Posada Classic")
 
-    mes_viaje = input("\nMes del viaje (ej: Diciembre / Enero): ").strip()
+    # Selector independiente de Régimen de Comidas
+    print("\n--- Régimen de Comidas (por pasajero) ---")
+    print("1. Sin régimen ($0 USD)\n2. Solo Desayuno (+$70 USD)\n3. Solo Cenas (+$100 USD)\n4. Media Pensión (Desayuno + Cena) (+$160 USD)")
+    opc_comida = input("Opción (1-4): ").strip()
+    comidas_map = {
+        "1": ("Sin régimen", 0),
+        "2": ("Solo Desayuno", 70),
+        "3": ("Solo Cenas", 100),
+        "4": ("Media Pensión (Desayuno + Cena)", 160)
+    }
+    regimen_comida, costo_comida_unitario = comidas_map.get(opc_comida, ("Sin régimen", 0))
+
+    mes_viaje = input("\nMes del viaje (ej: Diciembre / Enero / Marzo): ").strip()
+
+    # Modalidad de Transporte
+    print("\n--- Modalidad de Transporte ---")
+    print("1. Bus Semi Cama (Incluido / Base)")
+    print("2. Bus Cama (+$75 USD/pax)")
+    print("3. Aéreo Jetsmart Directo (Ene/Feb +$385 USD/pax | Mar +$150 USD/pax)")
+    print("4. Solo Bus (Venta exclusiva de transporte sin alojamiento)")
+    print("5. Sin Transporte (Solo alojamiento)")
+    opc_transp = input("Opción (1-5): ").strip()
+
+    recargo_aereo = 150 if "marzo" in mes_viaje.lower() or "mar" in mes_viaje.lower() else 385
+    transportes_map = {
+        "1": ("Bus Semi Cama", 0),
+        "2": ("Bus Cama", 75),
+        "3": ("Aéreo Jetsmart Directo", recargo_aereo),
+        "4": ("Solo Bus", 0),
+        "5": ("Sin Transporte", 0)
+    }
+    transporte_tipo, costo_transporte_unitario = transportes_map.get(opc_transp, ("Bus Semi Cama", 0))
 
     # Cotización del Dólar del día
     tc_input = input(
@@ -116,9 +157,17 @@ def generar_propuesta():
     tipo_cambio = float(tc_input) if tc_input.replace(
         ".", "", 1).isdigit() else 0.0
 
-    # Cálculo automático de precios
+    # Cálculo automático de precios con recargos de comidas y transporte
     precio_tachado, precio_promo, total_grupo, usd_unitario, ars_unitario, total_usd, total_ars = obtener_precios(
-        destino, cant_pasajeros)
+        destino, cant_pasajeros, alojamiento_texto)
+
+    # Sumamos los costos unitarios adicionales
+    usd_unitario += costo_comida_unitario + costo_transporte_unitario
+    total_usd = usd_unitario * cant_pasajeros
+
+    etiqueta_modalidad = "(Base Doble)" if cant_pasajeros == 2 else ""
+    precio_promo = f"{usd_unitario} USD + inscripción ${ars_unitario:,} {etiqueta_modalidad}".replace(",", ".").strip()
+    total_grupo = f"{total_usd} USD + inscripción ${total_ars:,}".replace(",", ".")
 
     bloque_total_grupo = ""
     if cant_pasajeros > 1:
@@ -145,7 +194,37 @@ def generar_propuesta():
             conversion_info += f"""
    • Total grupo en ARS ({cant_pasajeros} pers): ${total_grupo_pesos:,.0f} ARS""".replace(",", ".")
 
-    # 1. MENSAJE PARA EL CLIENTE (100% en USD)
+    # 1. MENSAJE PARA EL CLIENTE (100% en USD, limpio)
+    if transporte_tipo == "Aéreo Jetsmart Directo":
+        linea_transporte_wa = "✈️ Vuelo directo Jetsmart."
+    elif transporte_tipo == "Sin Transporte":
+        linea_transporte_wa = "🏨 Solo alojamiento (sin transporte)."
+    else:
+        linea_transporte_wa = f"🚌 Bus chárter directo ({transporte_tipo})."
+
+    items_wa = []
+    if transporte_tipo == "Aéreo Jetsmart Directo":
+        items_wa.append("* Vuelo directo Jetsmart ida y vuelta")
+        items_wa.append("* Equipaje de cabina hasta 10 kg")
+        items_wa.append("* Traslados internos aeropuerto - alojamiento - aeropuerto")
+    elif transporte_tipo == "Sin Transporte":
+        items_wa.append("* Recepción y entrega de llaves en destino")
+    else:
+        items_wa.append(f"* Bus ida y vuelta ({transporte_tipo})")
+        items_wa.append("* Traslados")
+
+    if transporte_tipo != "Solo Bus":
+        items_wa.append(f"* {alojamiento_texto}")
+        if costo_comida_unitario > 0:
+            items_wa.append(f"* Régimen: {regimen_comida}")
+
+    items_wa.append("* Coordinador")
+    items_wa.append("* Seguros")
+    items_wa.append("* Servicio en playa")
+    items_wa.append("* Bienvenida al destino")
+
+    bloque_incluye_wa = "\n".join(items_wa)
+
     mensaje_cliente = f"""¡Hola {cliente}! 👋 Te comparto un resumen de lo que incluye nuestra experiencia a {destino} para que no te quedes con dudas. 👇🏽
 
 🇧🇷 Brasil 🌴 {destino} ☀️
@@ -159,13 +238,7 @@ Agencia operadora mayorista - Líder en turismo 🥇
 📆 10 días y 7 noches ({mes_viaje})
 - Modalidad: {modalidad_str}
 
-🚌 Bus chárter directo. 
-
-⭐ Servicio privado y exclusivo.
-⭐ Especialistas en el destino, con más de 10 años de trayectoria.
-⭐ Salidas individuales y grupales.
-
-🎁 Paquetes flexibles y personalizados.
+{linea_transporte_wa}
 💳 Cuotas fijas hasta la fecha. 
 
 📍 {destino} 🌴 Precio por persona:
@@ -177,18 +250,9 @@ Agencia operadora mayorista - Líder en turismo 🥇
 
 Incluye: 
 
-* Bus ida y vuelta 
-* Traslados
-* {alojamiento_texto} 
-* Coordinador
-* Seguros 
-* Servicio en playa 
-* Bienvenida al destino 
+{bloque_incluye_wa}
 
-👉🏼 *Reservando hoy te llevás una cena de regalo y una bonificación de $100.000 en la reserva de tu viaje.* 📲
-
-🌐 Conocé más fotos y detalles de la experiencia en nuestra web:
-http://floripaconbreak.carrd.co/"""
+👉🏼 Reservando está semana te llevás de regalo una cena buffet despedida de Brasil . 📲"""
 
     # 2. FICHA DE CONTROL INTERNO Y CONVERSIÓN
     ficha_interna = f"""
@@ -200,6 +264,9 @@ http://floripaconbreak.carrd.co/"""
 📞 Contacto / WhatsApp: {telefono}
 📍 Destino: {destino}
 👥 Pasajeros: {cant_pasajeros} ({tipo_grupo})
+🚗 Transporte: {transporte_tipo} (+${costo_transporte_unitario} USD/pax)
+🏨 Alojamiento: {alojamiento_texto}
+🍽️ Régimen Comidas: {regimen_comida} (+${costo_comida_unitario} USD/pax)
 📅 Mes: {mes_viaje}
 💵 Cotización Final USD: {precio_promo}
 🇦🇷 CONVERSIÓN EN PESOS ARS (Uso interno):{conversion_info}

@@ -298,6 +298,112 @@ def calcular_cronograma(fecha_viernes):
     }
 
 
+def construir_mensaje_whatsapp(
+    cliente: str,
+    destino: str,
+    cant_pasajeros: int = 1,
+    tipo_grupo: str = "Individual",
+    transporte_tipo: str = "Bus Semi Cama",
+    alojamiento_texto: str = "Posada Classic",
+    regimen_comida: str = "Sin régimen",
+    costo_comida_unitario: int = 0,
+    precio_tachado_str: str = "",
+    precio_promo_str: str = "",
+    total_grupo_str: str = "",
+    rango_cronograma_o_mes: str = "",
+    puntos_fuertes: list = None,
+    pais: str = "Brasil"
+) -> str:
+    """
+    Construye de manera 100% dinámica el mensaje de WhatsApp para el cliente,
+    utilizando todos los parámetros seleccionados (destino, pasajeros, transporte, comidas, precios).
+    """
+    nombre_mostrado = cliente.strip() if cliente and cliente.strip() else "!"
+
+    # Puntos fuertes del destino
+    if not puntos_fuertes:
+        info = obtener_info_destino(destino)
+        puntos_fuertes = info.get("puntos_fuertes", [])
+        pais = info.get("pais", pais)
+
+    puntos_fuertes_str = "\n".join([f"- {pf}" for pf in puntos_fuertes])
+
+    # Modalidad
+    modalidad_str = f"Viaje {tipo_grupo.lower()}"
+    if cant_pasajeros > 1:
+        modalidad_str += f" ({cant_pasajeros} pasajeros)"
+
+    # Línea de transporte
+    if transporte_tipo == "Aéreo Jetsmart Directo":
+        linea_transporte_wa = "✈️ Vuelo directo Jetsmart."
+    elif transporte_tipo == "Sin Transporte":
+        linea_transporte_wa = "🏨 Solo alojamiento (sin transporte)."
+    else:
+        linea_transporte_wa = f"🚌 Bus chárter directo ({transporte_tipo})."
+
+    # Bloque de items incluidos
+    items_wa = []
+    if transporte_tipo == "Aéreo Jetsmart Directo":
+        items_wa.append("* Vuelo directo Jetsmart ida y vuelta")
+        items_wa.append("* Equipaje de cabina hasta 10 kg")
+        items_wa.append("* Traslados internos aeropuerto - alojamiento - aeropuerto")
+    elif transporte_tipo == "Sin Transporte":
+        items_wa.append("* Recepción y asistencia personalizada en destino")
+    else:
+        items_wa.append(f"* Bus ida y vuelta ({transporte_tipo})")
+        items_wa.append("* Traslados")
+
+    if transporte_tipo != "Solo Bus":
+        items_wa.append(f"* {alojamiento_texto}")
+        regimen_limpio = regimen_comida.split(" (")[0].strip()
+        if costo_comida_unitario > 0 or (regimen_limpio and regimen_limpio != "Sin régimen"):
+            items_wa.append(f"* Régimen: {regimen_limpio}")
+
+    items_wa.append("* Coordinador")
+    items_wa.append("* Seguros")
+    items_wa.append("* Servicio en playa")
+    items_wa.append("* Bienvenida al destino")
+
+    bloque_incluye_wa = "\n".join(items_wa)
+
+    # Bloque total grupo
+    bloque_total_grupo = ""
+    if cant_pasajeros > 1 and total_grupo_str:
+        bloque_total_grupo = f"\n\n💵 *Total del paquete ({cant_pasajeros} pasajeros):*\n💳 *{total_grupo_str}*"
+
+    # Duración / Cronograma
+    duracion_str = f"📆 10 días y 7 noches ({rango_cronograma_o_mes})" if rango_cronograma_o_mes else "📆 10 días y 7 noches"
+
+    mensaje = f"""¡Hola {nombre_mostrado}! 👋 Te comparto un resumen de lo que incluye nuestra experiencia a {destino} para que no te quedes con dudas. 👇🏽
+
+🇧🇷 {pais} 🌴 {destino} ☀️
+
+{puntos_fuertes_str}
+
+Agencia operadora mayorista - Líder en turismo 🥇
+
+{duracion_str}
+- Modalidad: {modalidad_str}
+
+{linea_transporte_wa}
+💳 Cuotas fijas hasta la fecha. 
+
+📍 {destino} 🌴 Precio por persona:
+
+~{precio_tachado_str}~
+🏷️ *{precio_promo_str}*{bloque_total_grupo}
+
+🔥 *¡Precio de Lanzamiento! Sostenible con bonificación por cupos limitados.* ‼️
+
+Incluye: 
+
+{bloque_incluye_wa}
+
+👉🏼 Reservando está semana te llevás de regalo una cena buffet despedida de Brasil . 📲"""
+
+    return mensaje
+
+
 def obtener_nombre_base(cant_pasajeros, base_doble_exclusiva=False):
     if cant_pasajeros == 2 and base_doble_exclusiva:
         return "Base doble exclusiva"
@@ -363,12 +469,14 @@ def generar_pdf_break(
     cronograma=None,
     cant_pasajeros=5,
     base_doble_exclusiva=False,
-    tipo_alojamiento="Departamento equipado completo",
+    tipo_alojamiento="Posada Classic",
+    regimen_comidas="Sin régimen",
+    tipo_transporte="Bus Semi Cama",
     fecha_cotizacion=None,
     agente_tel="351 505 2499",
     agente_email="nicoguemanbreak@gmail.com",
     lugar_salida="Terminal de Córdoba",
-    plataforma="80 a 90 - 23:00 horas",
+    plataforma="80 a 90 - 22:00 horas",
     **kwargs
 ):
     if not fecha_cotizacion:
@@ -387,6 +495,14 @@ def generar_pdf_break(
     usd_str = f"U$S {precio_usd}"
     ars_str = f"+ $ {ars_inscripcion:,} por persona".replace(",", ".")
     base_str = obtener_nombre_base(cant_pasajeros, base_doble_exclusiva)
+
+    # Identificación de modalidad de transporte
+    es_aereo = "Aéreo" in tipo_transporte or "Jetsmart" in tipo_transporte
+    es_sin_transporte = "Sin Transporte" in tipo_transporte
+    es_solo_bus = "Solo Bus" in tipo_transporte
+
+    # Texto de régimen de comidas si aplica
+    texto_comidas_aloj = f" | Régimen: {regimen_comidas}" if regimen_comidas and "Sin régimen" not in regimen_comidas else ""
 
     # =========================================================================
     # PÁGINA 1: PORTADA & RESUMEN DE TARIFA DESTACADA
@@ -454,7 +570,7 @@ def generar_pdf_break(
     c.drawString(530, 405, "floripaconbreak.carrd.co")
     c.drawString(530, 385, agente_tel)
 
-    # Glosario
+    # Glosario dinámico
     c.setFont("Helvetica-Bold", 11)
     c.setFillColor(colors.HexColor("#1A1A1A"))
     c.drawString(70, 240, "GLOSARIO")
@@ -468,16 +584,23 @@ def generar_pdf_break(
         c.drawString(x + 16, y, label)
 
     draw_check_item(c, 70, 210, "1 Destino")
-    draw_check_item(c, 70, 190, "1 Transporte")
+    if not es_sin_transporte:
+        etiqueta_t = "1 Vuelo Directo" if es_aereo else "1 Transporte"
+        draw_check_item(c, 70, 190, etiqueta_t)
+    else:
+        draw_check_item(c, 70, 190, "Sin Transporte")
     draw_check_item(c, 175, 210, "1 Seguro")
-    draw_check_item(c, 175, 190, "1 Alojamiento")
-    draw_check_item(c, 175, 170, "7 Noches")
+    if not es_solo_bus:
+        draw_check_item(c, 175, 190, "1 Alojamiento")
+        draw_check_item(c, 175, 170, "7 Noches")
+    else:
+        draw_check_item(c, 175, 190, "Solo Bus")
 
     draw_footer(c)
     c.showPage()
 
     # =========================================================================
-    # PÁGINA 2: ITINERARIO DETALLADO (AJUSTADO LIMPIO EN FINAL DEL VIAJE)
+    # PÁGINA 2: ITINERARIO DETALLADO POR MODALIDAD DE TRANSPORTE
     # =========================================================================
     c.setFont("Helvetica-Bold", 32)
     c.setFillColor(colors.HexColor("#1A1A1A"))
@@ -487,76 +610,228 @@ def generar_pdf_break(
     c.setLineWidth(1)
     c.line(70, 1060, 240, 1060)
 
-    # Paso 1: Inicio del viaje
-    c.setFont("Helvetica-Bold", 14)
-    c.setFillColor(colors.HexColor("#222222"))
-    c.drawString(70, 1010, "Inicio del viaje")
+    if es_aereo:
+        # ---------------------------------------------------------------------
+        # MODALIDAD B: AÉREO JETSMART DIRECTO (EXCLUSIVO)
+        # ---------------------------------------------------------------------
+        # Paso 1: Vuelo de Ida
+        c.setFont("Helvetica-Bold", 14)
+        c.setFillColor(colors.HexColor("#222222"))
+        c.drawString(70, 1010, "Inicio del viaje - Vuelo Directo Jetsmart")
 
-    draw_pin_icon(c, 90, 935, size=18)
+        draw_pin_icon(c, 90, 935, size=18)
 
-    c.setFont("Helvetica-Bold", 16)
-    c.setFillColor(colors.HexColor("#1A1A1A"))
-    c.drawString(130, 945, "Córdoba")
-    c.setFont("Helvetica", 12)
-    c.setFillColor(colors.HexColor("#666666"))
-    c.drawString(130, 928, "Argentina")
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(colors.HexColor("#1A1A1A"))
+        c.drawString(130, 945, "Córdoba")
+        c.setFont("Helvetica", 12)
+        c.setFillColor(colors.HexColor("#666666"))
+        c.drawString(130, 928, "Aeropuerto Internacional Córdoba")
 
-    c.setFont("Helvetica-Bold", 13)
-    c.setFillColor(colors.HexColor("#222222"))
-    c.drawString(360, 950, f"Salida programada: {cronograma['salida_str']}")
+        c.setFont("Helvetica-Bold", 13)
+        c.setFillColor(colors.HexColor("#222222"))
+        c.drawString(360, 950, f"Salida Vuelo: Domingo {cronograma['checkin_str']} - 15:00 hs")
 
-    c.setFont("Helvetica", 11)
-    c.setFillColor(colors.HexColor("#444444"))
-    c.drawString(360, 930, "Transporte: Planalto - Costa viajes")
-    c.drawString(360, 912, f"Lugar de salida: {lugar_salida}")
-    c.drawString(360, 894, f"Plataforma: {plataforma}")
+        c.setFont("Helvetica", 11)
+        c.setFillColor(colors.HexColor("#444444"))
+        c.drawString(360, 930, "Vuelo directo Córdoba - Floripa (Duración: 3 horas)")
+        c.drawString(360, 912, "Horario de llegada estimado: 18:00 hs (Florianópolis)")
+        c.drawString(360, 894, "Incluye: Equipaje cabina hasta 10 kg + Traslado Aeropuerto - Alojamiento")
 
-    # Paso 2: Estadía en Destino
-    draw_pin_icon(c, 90, 775, size=18)
+        # Paso 2: Estadía en Destino
+        draw_pin_icon(c, 90, 775, size=18)
 
-    c.setFont("Helvetica-Bold", 16)
-    c.setFillColor(colors.HexColor("#1A1A1A"))
-    c.drawString(130, 785, destino)
-    c.setFont("Helvetica", 12)
-    c.setFillColor(colors.HexColor("#666666"))
-    c.drawString(130, 768, info_dest['pais'])
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(colors.HexColor("#1A1A1A"))
+        c.drawString(130, 785, destino)
+        c.setFont("Helvetica", 12)
+        c.setFillColor(colors.HexColor("#666666"))
+        c.drawString(130, 768, info_dest['pais'])
 
-    c.setFont("Helvetica-Bold", 13)
-    c.setFillColor(colors.HexColor("#222222"))
-    c.drawString(360, 790, cronograma['estadia_itinerario'])
+        c.setFont("Helvetica-Bold", 13)
+        c.setFillColor(colors.HexColor("#222222"))
+        c.drawString(360, 790, cronograma['estadia_itinerario'])
 
-    c.setFont("Helvetica", 11)
-    c.setFillColor(colors.HexColor("#444444"))
-    c.drawString(360, 770, f"Alojamiento: {tipo_alojamiento}")
-    c.drawString(360, 752, f"Tipo de habitación: {base_str}")
-    c.drawString(360, 734, "Cantidad: 7 noches de hospedaje completo")
+        c.setFont("Helvetica", 11)
+        c.setFillColor(colors.HexColor("#444444"))
+        c.drawString(360, 770, f"Alojamiento: {tipo_alojamiento}{texto_comidas_aloj}")
+        c.drawString(360, 752, f"Tipo de habitación: {base_str}")
+        c.drawString(360, 734, "Coordinación receptiva acompañando en destino")
 
-    # Paso 3: Final del viaje (LIMPIO, ÚNICAMENTE LLEGADA AL ORIGEN SIN TEXTO DE RETORNO CORTADO)
-    c.setFont("Helvetica-Bold", 14)
-    c.setFillColor(colors.HexColor("#222222"))
-    c.drawString(70, 620, "Final del viaje")
+        # Paso 3: Vuelo de Regreso
+        c.setFont("Helvetica-Bold", 14)
+        c.setFillColor(colors.HexColor("#222222"))
+        c.drawString(70, 620, "Regreso - Vuelo Directo Jetsmart")
 
-    draw_pin_icon(c, 90, 545, size=18)
+        draw_pin_icon(c, 90, 545, size=18)
 
-    c.setFont("Helvetica-Bold", 16)
-    c.setFillColor(colors.HexColor("#1A1A1A"))
-    c.drawString(130, 555, "Córdoba")
-    c.setFont("Helvetica", 12)
-    c.setFillColor(colors.HexColor("#666666"))
-    c.drawString(130, 538, "Argentina")
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(colors.HexColor("#1A1A1A"))
+        c.drawString(130, 555, "Córdoba")
+        c.setFont("Helvetica", 12)
+        c.setFillColor(colors.HexColor("#666666"))
+        c.drawString(130, 538, "Aeropuerto Internacional Córdoba")
 
-    c.setFont("Helvetica-Bold", 13)
-    c.setFillColor(colors.HexColor("#222222"))
-    # Llegada con fecha completa: 'Llegada: Lunes 02 de Febrero (tarde)'
-    arribo_fecha = cronograma.get(
-        "arribo_fecha_str", cronograma.get("dia_llegada_nombre", "Lunes"))
-    c.drawString(360, 560, f"Llegada: {arribo_fecha} (tarde)")
+        c.setFont("Helvetica-Bold", 13)
+        c.setFillColor(colors.HexColor("#222222"))
+        fecha_regreso_vuelo = cronograma['checkout_str'].split(' (')[0]
+        c.drawString(360, 560, f"Vuelo de Regreso: Domingo {fecha_regreso_vuelo} - 18:00 hs")
 
-    c.setFont("Helvetica", 11)
-    c.setFillColor(colors.HexColor("#444444"))
-    c.drawString(360, 540, "Transporte: Planalto - Costa viajes")
-    c.drawString(360, 522, f"Lugar de llegada: {lugar_salida}")
-    c.drawString(360, 504, "Plataforma: 80 a 90")
+        c.setFont("Helvetica", 11)
+        c.setFillColor(colors.HexColor("#444444"))
+        c.drawString(360, 540, "Vuelo directo Floripa - Córdoba (Duración: 3 horas)")
+        c.drawString(360, 522, "Horario de arribo a Córdoba: 21:00 hs")
+        c.drawString(360, 504, "Incluye: Traslado Alojamiento hacia Aeropuerto + Equipaje cabina 10 kg")
+
+    elif es_sin_transporte:
+        # ---------------------------------------------------------------------
+        # MODALIDAD C: SIN TRANSPORTE (SOLO ALOJAMIENTO)
+        # ---------------------------------------------------------------------
+        # Paso 1: Check-in Alojamiento
+        c.setFont("Helvetica-Bold", 14)
+        c.setFillColor(colors.HexColor("#222222"))
+        c.drawString(70, 1010, "Llegada al Destino y Check-in")
+
+        draw_pin_icon(c, 90, 935, size=18)
+
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(colors.HexColor("#1A1A1A"))
+        c.drawString(130, 945, destino)
+        c.setFont("Helvetica", 12)
+        c.setFillColor(colors.HexColor("#666666"))
+        c.drawString(130, 928, info_dest['pais'])
+
+        c.setFont("Helvetica-Bold", 13)
+        c.setFillColor(colors.HexColor("#222222"))
+        c.drawString(360, 950, f"Check-in: Domingo {cronograma['checkin_str']}")
+
+        c.setFont("Helvetica", 11)
+        c.setFillColor(colors.HexColor("#444444"))
+        c.drawString(360, 930, "Transporte: No incluido (Arribo por cuenta del pasajero)")
+        c.drawString(360, 912, "Horario de ingreso internacional: A partir de las 14:00 hs")
+        c.drawString(360, 894, "Recepción: Coordinador y entrega de llaves en el alojamiento")
+
+        # Paso 2: Estadía en Destino
+        draw_pin_icon(c, 90, 775, size=18)
+
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(colors.HexColor("#1A1A1A"))
+        c.drawString(130, 785, destino)
+        c.setFont("Helvetica", 12)
+        c.setFillColor(colors.HexColor("#666666"))
+        c.drawString(130, 768, info_dest['pais'])
+
+        c.setFont("Helvetica-Bold", 13)
+        c.setFillColor(colors.HexColor("#222222"))
+        c.drawString(360, 790, cronograma['estadia_itinerario'])
+
+        c.setFont("Helvetica", 11)
+        c.setFillColor(colors.HexColor("#444444"))
+        c.drawString(360, 770, f"Alojamiento: {tipo_alojamiento}{texto_comidas_aloj}")
+        c.drawString(360, 752, f"Tipo de habitación: {base_str}")
+        c.drawString(360, 734, "Servicios: Seguro, asistencia médica y Breakpoint exclusivo de playa")
+
+        # Paso 3: Check-out
+        c.setFont("Helvetica-Bold", 14)
+        c.setFillColor(colors.HexColor("#222222"))
+        c.drawString(70, 620, "Check-out y Salida")
+
+        draw_pin_icon(c, 90, 545, size=18)
+
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(colors.HexColor("#1A1A1A"))
+        c.drawString(130, 555, destino)
+        c.setFont("Helvetica", 12)
+        c.setFillColor(colors.HexColor("#666666"))
+        c.drawString(130, 538, info_dest['pais'])
+
+        c.setFont("Helvetica-Bold", 13)
+        c.setFillColor(colors.HexColor("#222222"))
+        fecha_salida_aloj = cronograma['checkout_str'].split(' (')[0]
+        c.drawString(360, 560, f"Check-out: Domingo {fecha_salida_aloj}")
+
+        c.setFont("Helvetica", 11)
+        c.setFillColor(colors.HexColor("#444444"))
+        c.drawString(360, 540, "Horario de salida: Hasta las 10:00 horas")
+        c.drawString(360, 522, "Fin de nuestros servicios de hospedaje")
+        c.drawString(360, 504, "Regreso por cuenta propia del pasajero")
+
+    else:
+        # ---------------------------------------------------------------------
+        # MODALIDAD A: BUS (SEMI CAMA O CAMA) / SOLO BUS (EXCLUSIVO TERRESTRE)
+        # ---------------------------------------------------------------------
+        nombre_bus = "Bus Cama" if "Cama" in tipo_transporte and "Semi" not in tipo_transporte else "Bus Semi Cama"
+        aloj_linea = "Venta exclusiva de transporte (Sin hospedaje)" if es_solo_bus else f"Alojamiento: {tipo_alojamiento}{texto_comidas_aloj}"
+
+        # Paso 1: Inicio del viaje
+        c.setFont("Helvetica-Bold", 14)
+        c.setFillColor(colors.HexColor("#222222"))
+        c.drawString(70, 1010, "Inicio del viaje")
+
+        draw_pin_icon(c, 90, 935, size=18)
+
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(colors.HexColor("#1A1A1A"))
+        c.drawString(130, 945, "Córdoba")
+        c.setFont("Helvetica", 12)
+        c.setFillColor(colors.HexColor("#666666"))
+        c.drawString(130, 928, "Argentina")
+
+        c.setFont("Helvetica-Bold", 13)
+        c.setFillColor(colors.HexColor("#222222"))
+        c.drawString(360, 950, f"Salida programada: {cronograma['salida_str']}")
+
+        c.setFont("Helvetica", 11)
+        c.setFillColor(colors.HexColor("#444444"))
+        c.drawString(360, 930, f"Transporte: {nombre_bus} - Planalto / Costa viajes")
+        c.drawString(360, 912, f"Lugar de salida: {lugar_salida}")
+        c.drawString(360, 894, f"Plataforma: {plataforma}")
+
+        # Paso 2: Estadía en Destino
+        draw_pin_icon(c, 90, 775, size=18)
+
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(colors.HexColor("#1A1A1A"))
+        c.drawString(130, 785, destino)
+        c.setFont("Helvetica", 12)
+        c.setFillColor(colors.HexColor("#666666"))
+        c.drawString(130, 768, info_dest['pais'])
+
+        c.setFont("Helvetica-Bold", 13)
+        c.setFillColor(colors.HexColor("#222222"))
+        c.drawString(360, 790, cronograma['estadia_itinerario'])
+
+        c.setFont("Helvetica", 11)
+        c.setFillColor(colors.HexColor("#444444"))
+        c.drawString(360, 770, aloj_linea)
+        c.drawString(360, 752, f"Tipo de habitación: {base_str}")
+        c.drawString(360, 734, "Cantidad: 7 noches de hospedaje completo" if not es_solo_bus else "Servicio: Transporte ida y vuelta directo")
+
+        # Paso 3: Final del viaje
+        c.setFont("Helvetica-Bold", 14)
+        c.setFillColor(colors.HexColor("#222222"))
+        c.drawString(70, 620, "Final del viaje")
+
+        draw_pin_icon(c, 90, 545, size=18)
+
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(colors.HexColor("#1A1A1A"))
+        c.drawString(130, 555, "Córdoba")
+        c.setFont("Helvetica", 12)
+        c.setFillColor(colors.HexColor("#666666"))
+        c.drawString(130, 538, "Argentina")
+
+        c.setFont("Helvetica-Bold", 13)
+        c.setFillColor(colors.HexColor("#222222"))
+        arribo_fecha = cronograma.get(
+            "arribo_fecha_str", cronograma.get("dia_llegada_nombre", "Lunes"))
+        c.drawString(360, 560, f"Llegada: {arribo_fecha} (tarde)")
+
+        c.setFont("Helvetica", 11)
+        c.setFillColor(colors.HexColor("#444444"))
+        c.drawString(360, 540, f"Transporte: {nombre_bus} - Planalto / Costa viajes")
+        c.drawString(360, 522, f"Lugar de llegada: {lugar_salida}")
+        c.drawString(360, 504, "Plataforma: 80 a 90")
 
     draw_footer(c)
     c.showPage()
@@ -568,20 +843,78 @@ def generar_pdf_break(
     c.setFillColor(colors.HexColor("#1A1A1A"))
     c.drawString(70, 1100, "Descripción del viaje")
 
-    # INCLUYE
+    # INCLUYE CONDICIONAL
     c.setFont("Helvetica-Bold", 13)
     c.setFillColor(colors.HexColor("#222222"))
     c.drawString(70, 1050, "INCLUYE:")
 
-    incluye_items = [
-        f"Transporte en bus. Chárter directo a {destino}.",
-        "Equipaje de bodega, hasta 23 Kg",
-        "Equipaje de mano, mochila o bolso",
-        f"Alojamiento 7 noches en {destino}",
-        "Seguro de resposabilidad civil",
-        "Asistencia en rutas",
-        "Gestor de ingreso y egreso a Brasil"
-    ]
+    if es_aereo:
+        incluye_items = [
+            f"Vuelo directo Jetsmart ida y vuelta (Córdoba - Floripa).",
+            "Equipaje de mano / bolso / valija en cabina de hasta 10 kg.",
+            "Traslados internos en destino (Aeropuerto - Alojamiento - Aeropuerto).",
+            f"Alojamiento 7 noches en {destino} ({tipo_alojamiento})." if not es_solo_bus else f"Venta exclusiva de pasaje aéreo a {destino}.",
+            "Seguro de responsabilidad civil y asistencia médica.",
+            "Coordinación receptiva permanente en destino.",
+            "Servicio exclusivo de playa en Breakpoint."
+        ]
+        if not es_solo_bus and regimen_comidas and "Sin régimen" not in regimen_comidas:
+            incluye_items.insert(4, f"Régimen de comidas: {regimen_comidas}")
+
+        info_items = [
+            "Para el trámite en aeropuerto y aduana se necesita DNI vigente o Pasaporte",
+            "",
+            "Vuelo Directo Jetsmart: Salidas de Domingo a Domingo (7 días de estadía)",
+            "Duración del vuelo: 3 horas directas (Córdoba - Floripa)",
+            "Horarios de vuelo: Salida 15:00 hs | Regreso 18:00 hs",
+            "Equipaje incluido: hasta 10 kg en cabina por pasajero",
+            "Traslados internos incluidos (Aeropuerto - Alojamiento - Aeropuerto)",
+            "Coordinación receptiva acompañando en destino"
+        ]
+    elif es_sin_transporte:
+        incluye_items = [
+            f"Alojamiento 7 noches en {destino} ({tipo_alojamiento}).",
+            "Seguro de responsabilidad civil y cobertura médica.",
+            "Coordinador residente y asistencia permanente en destino.",
+            "Servicio de playa en Breakpoint exclusivo.",
+            "Bienvenida al destino y entrega personalizada de llaves."
+        ]
+        if regimen_comidas and "Sin régimen" not in regimen_comidas:
+            incluye_items.insert(1, f"Régimen de comidas: {regimen_comidas}")
+
+        info_items = [
+            "Para el ingreso al país se necesita actualizado el DNI o Pasaporte",
+            "",
+            "Paquete de estadía en destino (Transporte terrestre/aéreo no incluido)",
+            "Horario internacional de Check-in: Domingo a partir de las 14:00 hs",
+            "Horario de Check-out: Domingo hasta las 10:00 hs",
+            "Oficina y equipo de Break a disposición durante toda la estadía"
+        ]
+    else:
+        nombre_bus = "Bus Cama" if "Cama" in tipo_transporte and "Semi" not in tipo_transporte else "Bus Semi Cama"
+        incluye_items = [
+            f"Transporte en bus chárter ({nombre_bus}). Directo a {destino}.",
+            "Equipaje de bodega, hasta 23 Kg",
+            "Equipaje de mano, mochila o bolso",
+            f"Alojamiento 7 noches en {destino} ({tipo_alojamiento})" if not es_solo_bus else f"Transporte ida y vuelta a {destino} (Sin alojamiento)",
+            "Seguro de resposabilidad civil",
+            "Asistencia en rutas",
+            "Gestor de ingreso y egreso a Brasil"
+        ]
+        if not es_solo_bus and regimen_comidas and "Sin régimen" not in regimen_comidas:
+            incluye_items.insert(4, f"Régimen de comidas: {regimen_comidas}")
+
+        info_items = [
+            "Para el trámite en aduana se necesita actualizado el DNI o como alternativa el Pasaporte",
+            "",
+            "Duración: 33h en bus chárter directo",
+            "Parada para desayuno",
+            "Parada gestión en aduana",
+            "Parada para almuerzo",
+            "Parada para cena",
+            info_dest["parada_ruta_detalle"]
+        ]
+
     y_inc = 1030
     for item in incluye_items:
         c.setFont("Helvetica", 11)
@@ -594,16 +927,6 @@ def generar_pdf_break(
     c.setFillColor(colors.HexColor("#222222"))
     c.drawString(70, 875, "INFORMACIÓN IMPORTANTE:")
 
-    info_items = [
-        "Para el trámite en aduana se necesita actualizado el DNI o como alternativa el Pasaporte",
-        "",
-        "Duración: 33h",
-        "Parada para desayuno",
-        "Parada gestión en aduana",
-        "Parada para almuerzo",
-        "Parada para cena",
-        info_dest["parada_ruta_detalle"]
-    ]
     y_info = 855
     for item in info_items:
         if item == "":
