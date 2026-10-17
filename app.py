@@ -14,11 +14,6 @@ from pdf_generator_break import (
     DATOS_DESTINOS
 )
 
-# Importamos la base de tarifas y la funcion de precios desde generador.py
-from generador import (
-    TARIFAS,
-    obtener_precios
-)
 # --- Configuración de la página ---
 st.set_page_config(
     page_title="Break Tienda de Viajes - Itinerarios y Propuestas",

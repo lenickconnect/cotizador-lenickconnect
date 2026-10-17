@@ -128,9 +128,11 @@ def generar_propuesta():
         "3": ("Solo Cenas", 100),
         "4": ("Media Pensión (Desayuno + Cena)", 160)
     }
-    regimen_comida, costo_comida_unitario = comidas_map.get(opc_comida, ("Sin régimen", 0))
+    regimen_comida, costo_comida_unitario = comidas_map.get(
+        opc_comida, ("Sin régimen", 0))
 
-    mes_viaje = input("\nMes del viaje (ej: Diciembre / Enero / Marzo): ").strip()
+    mes_viaje = input(
+        "\nMes del viaje (ej: Diciembre / Enero / Marzo): ").strip()
 
     # Modalidad de Transporte
     print("\n--- Modalidad de Transporte ---")
@@ -141,7 +143,8 @@ def generar_propuesta():
     print("5. Sin Transporte (Solo alojamiento)")
     opc_transp = input("Opción (1-5): ").strip()
 
-    recargo_aereo = 150 if "marzo" in mes_viaje.lower() or "mar" in mes_viaje.lower() else 385
+    recargo_aereo = 150 if "marzo" in mes_viaje.lower(
+    ) or "mar" in mes_viaje.lower() else 385
     transportes_map = {
         "1": ("Bus Semi Cama", 0),
         "2": ("Bus Cama", 75),
@@ -149,7 +152,8 @@ def generar_propuesta():
         "4": ("Solo Bus", 0),
         "5": ("Sin Transporte", 0)
     }
-    transporte_tipo, costo_transporte_unitario = transportes_map.get(opc_transp, ("Bus Semi Cama", 0))
+    transporte_tipo, costo_transporte_unitario = transportes_map.get(
+        opc_transp, ("Bus Semi Cama", 0))
 
     # Cotización del Dólar del día
     tc_input = input(
@@ -166,8 +170,10 @@ def generar_propuesta():
     total_usd = usd_unitario * cant_pasajeros
 
     etiqueta_modalidad = "(Base Doble)" if cant_pasajeros == 2 else ""
-    precio_promo = f"{usd_unitario} USD + inscripción ${ars_unitario:,} {etiqueta_modalidad}".replace(",", ".").strip()
-    total_grupo = f"{total_usd} USD + inscripción ${total_ars:,}".replace(",", ".")
+    precio_promo = f"{usd_unitario} USD + inscripción ${ars_unitario:,} {etiqueta_modalidad}".replace(
+        ",", ".").strip()
+    total_grupo = f"{total_usd} USD + inscripción ${total_ars:,}".replace(
+        ",", ".")
 
     bloque_total_grupo = ""
     if cant_pasajeros > 1:
@@ -206,7 +212,8 @@ def generar_propuesta():
     if transporte_tipo == "Aéreo Jetsmart Directo":
         items_wa.append("* Vuelo directo Jetsmart ida y vuelta")
         items_wa.append("* Equipaje de cabina hasta 10 kg")
-        items_wa.append("* Traslados internos aeropuerto - alojamiento - aeropuerto")
+        items_wa.append(
+            "* Traslados internos aeropuerto - alojamiento - aeropuerto")
     elif transporte_tipo == "Sin Transporte":
         items_wa.append("* Recepción y entrega de llaves en destino")
     else:
