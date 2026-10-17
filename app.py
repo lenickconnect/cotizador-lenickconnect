@@ -14,6 +14,11 @@ from pdf_generator_break import (
     DATOS_DESTINOS
 )
 
+# Importamos la base de tarifas y la funcion de precios desde generador.py
+from generador import (
+    TARIFAS,
+    obtener_precios
+)
 # --- Configuración de la página ---
 st.set_page_config(
     page_title="Break Tienda de Viajes - Itinerarios y Propuestas",
@@ -160,7 +165,8 @@ with st.sidebar:
         "Solo Cenas (+100 USD/pax)": 100,
         "Media Pensión (Desayuno + Cena) (+160 USD/pax)": 160
     }
-    regimen_sel = st.selectbox("Régimen de Comidas (por pasajero)", list(REGIMENES_COMIDAS.keys()))
+    regimen_sel = st.selectbox(
+        "Régimen de Comidas (por pasajero)", list(REGIMENES_COMIDAS.keys()))
     costo_comida_unitario = REGIMENES_COMIDAS[regimen_sel]
     regimen_nombre_limpio = regimen_sel.split(" (")[0]
 
@@ -176,7 +182,8 @@ with st.sidebar:
         "Solo Bus (Venta exclusiva de transporte)",
         "Sin Transporte (Solo alojamiento)"
     ]
-    transporte_sel = st.selectbox("Modalidad de Transporte", OPCIONES_TRANSPORTE)
+    transporte_sel = st.selectbox(
+        "Modalidad de Transporte", OPCIONES_TRANSPORTE)
 
     if "Bus Cama" in transporte_sel:
         costo_transporte_unitario = 75
@@ -240,8 +247,10 @@ else:
 recargo_doble_exclusiva = 100 if base_doble_exclusiva else 0
 
 # Tarifa final por persona con recargos de comidas y transporte
-usd_promo = usd_base + recargo_doble_exclusiva + costo_comida_unitario + costo_transporte_unitario
-usd_tachado = usd_tachado_base + recargo_doble_exclusiva + costo_comida_unitario + costo_transporte_unitario
+usd_promo = usd_base + recargo_doble_exclusiva + \
+    costo_comida_unitario + costo_transporte_unitario
+usd_tachado = usd_tachado_base + recargo_doble_exclusiva + \
+    costo_comida_unitario + costo_transporte_unitario
 
 etiqueta_modalidad = f"(Base {cant_pasajeros} pax)" if cant_pasajeros > 1 else "(Individual)"
 if base_doble_exclusiva:
@@ -299,7 +308,8 @@ mensaje_cliente = construir_mensaje_whatsapp(
     precio_tachado_str=precio_tachado_str,
     precio_promo_str=precio_promo_str,
     total_grupo_str=total_grupo_str,
-    rango_cronograma_o_mes=cronograma.get('rango_total', '') if cronograma else '',
+    rango_cronograma_o_mes=cronograma.get(
+        'rango_total', '') if cronograma else '',
     puntos_fuertes=info_dest.get("puntos_fuertes", []),
     pais=info_dest.get("pais", "Brasil")
 )
@@ -391,9 +401,12 @@ with col_m4:
 st.markdown("---")
 
 # --- Generación de Slugs para Keys Únicas de React / Streamlit ---
-destino_slug = "".join(c for c in destino if c.isalnum() or c in ('_', '-')).lower() or "destino"
-transporte_slug = "".join(c for c in transporte_tipo if c.isalnum() or c in ('_', '-')).lower() or "transporte"
-regimen_slug = "".join(c for c in regimen_nombre_limpio if c.isalnum() or c in ('_', '-')).lower() or "regimen"
+destino_slug = "".join(c for c in destino if c.isalnum()
+                       or c in ('_', '-')).lower() or "destino"
+transporte_slug = "".join(c for c in transporte_tipo if c.isalnum() or c in (
+    '_', '-')).lower() or "transporte"
+regimen_slug = "".join(c for c in regimen_nombre_limpio if c.isalnum(
+) or c in ('_', '-')).lower() or "regimen"
 
 # --- Sincronización dinámica de st.session_state ANTES de renderizar la UI de WhatsApp ---
 wa_signature = f"{cliente}_{destino}_{cant_pasajeros}_{tipo_grupo}_{transporte_tipo}_{regimen_nombre_limpio}_{alojamiento_texto}_{total_usd}_{ars_inscripcion}"
@@ -462,7 +475,8 @@ with tab_whatsapp:
 
             # Botón para registrar en historial
             if st.button("📌 Guardar en Historial de Sesión", use_container_width=True, key=f"btn_historial_{destino_slug}_{transporte_slug}_{cant_pasajeros}"):
-                salida_crono = cronograma.get("salida_str", "").split(" - ")[0] if cronograma else "Viernes"
+                salida_crono = cronograma.get("salida_str", "").split(
+                    " - ")[0] if cronograma else "Viernes"
                 st.session_state["historial"].append({
                     "fecha": datetime.now().strftime("%H:%M:%S"),
                     "cliente": cliente or "Sin nombre",
@@ -478,15 +492,20 @@ with tab_whatsapp:
 with tab_cronograma_view:
     crono_container_key = f"cronograma_{destino_slug}_{transporte_slug}"
     with st.container(key=crono_container_key):
-        rango_crono_str = cronograma.get('rango_total', '') if cronograma else ''
-        st.markdown(f"#### 🗓️ Cronograma Oficial: {destino} ({rango_crono_str})")
+        rango_crono_str = cronograma.get(
+            'rango_total', '') if cronograma else ''
+        st.markdown(
+            f"#### 🗓️ Cronograma Oficial: {destino} ({rango_crono_str})")
 
         col_c1, col_c2 = st.columns(2)
 
         if transporte_tipo == "Aéreo Jetsmart Directo":
-            f_checkin_str = cronograma.get('checkin_str', '') if cronograma else ''
-            f_checkout_str = cronograma.get('checkout_str', '').split(' (')[0] if cronograma else ''
-            estadia_str = cronograma.get('estadia_itinerario', '') if cronograma else ''
+            f_checkin_str = cronograma.get(
+                'checkin_str', '') if cronograma else ''
+            f_checkout_str = cronograma.get('checkout_str', '').split(
+                ' (')[0] if cronograma else ''
+            estadia_str = cronograma.get(
+                'estadia_itinerario', '') if cronograma else ''
 
             with col_c1:
                 st.info(f"""
@@ -513,9 +532,12 @@ with tab_cronograma_view:
                 • Traslado interno hacia el Aeropuerto incluido.
                 """)
         elif transporte_tipo == "Sin Transporte":
-            f_checkin_str = cronograma.get('checkin_str', '') if cronograma else ''
-            f_checkout_str = cronograma.get('checkout_str', '').split(' (')[0] if cronograma else ''
-            estadia_str = cronograma.get('estadia_itinerario', '') if cronograma else ''
+            f_checkin_str = cronograma.get(
+                'checkin_str', '') if cronograma else ''
+            f_checkout_str = cronograma.get('checkout_str', '').split(
+                ' (')[0] if cronograma else ''
+            estadia_str = cronograma.get(
+                'estadia_itinerario', '') if cronograma else ''
 
             with col_c1:
                 st.info(f"""
@@ -540,12 +562,18 @@ with tab_cronograma_view:
                 • Fin de servicios de hospedaje.
                 """)
         else:
-            f_salida_str = cronograma.get('salida_str', '') if cronograma else ''
-            f_checkin_str = cronograma.get('checkin_str', '') if cronograma else ''
-            f_checkout_str = cronograma.get('checkout_str', '') if cronograma else ''
-            f_arribo_str = cronograma.get('arribo_str', '') if cronograma else ''
-            estadia_str = cronograma.get('estadia_itinerario', '') if cronograma else ''
-            parada_detalle = info_dest.get('parada_ruta_detalle', '') if info_dest else ''
+            f_salida_str = cronograma.get(
+                'salida_str', '') if cronograma else ''
+            f_checkin_str = cronograma.get(
+                'checkin_str', '') if cronograma else ''
+            f_checkout_str = cronograma.get(
+                'checkout_str', '') if cronograma else ''
+            f_arribo_str = cronograma.get(
+                'arribo_str', '') if cronograma else ''
+            estadia_str = cronograma.get(
+                'estadia_itinerario', '') if cronograma else ''
+            parada_detalle = info_dest.get(
+                'parada_ruta_detalle', '') if info_dest else ''
 
             with col_c1:
                 st.info(f"""
@@ -583,31 +611,41 @@ with tab_ficha:
         if tipo_cambio and tipo_cambio > 0:
             st.markdown("##### 🔍 Desglose de Costos en ARS")
             concepto_inscripcion = (
-                f"Inscripción en ARS (Lista ${ars_tachado:,.0f} - Bonif. ${ars_bonificacion:,.0f})".replace(",", ".")
+                f"Inscripción en ARS (Lista ${ars_tachado:,.0f} - Bonif. ${ars_bonificacion:,.0f})".replace(
+                    ",", ".")
                 if ars_bonificacion and ars_bonificacion > 0 else "Inscripción en ARS"
             )
 
             conceptos = ["Tarifa Base (USD)"]
-            montos_persona = [f"${usd_base * tipo_cambio:,.0f} ARS ({usd_base} USD)".replace(",", ".")]
-            montos_grupo = [f"${usd_base * cant_pasajeros * tipo_cambio:,.0f} ARS ({usd_base * cant_pasajeros} USD)".replace(",", ".")]
+            montos_persona = [
+                f"${usd_base * tipo_cambio:,.0f} ARS ({usd_base} USD)".replace(",", ".")]
+            montos_grupo = [
+                f"${usd_base * cant_pasajeros * tipo_cambio:,.0f} ARS ({usd_base * cant_pasajeros} USD)".replace(",", ".")]
 
             if costo_comida_unitario and costo_comida_unitario > 0:
                 conceptos.append(f"Régimen: {regimen_nombre_limpio}")
-                montos_persona.append(f"${costo_comida_unitario * tipo_cambio:,.0f} ARS (+{costo_comida_unitario} USD)".replace(",", "."))
-                montos_grupo.append(f"${costo_comida_unitario * cant_pasajeros * tipo_cambio:,.0f} ARS (+{costo_comida_unitario * cant_pasajeros} USD)".replace(",", "."))
+                montos_persona.append(
+                    f"${costo_comida_unitario * tipo_cambio:,.0f} ARS (+{costo_comida_unitario} USD)".replace(",", "."))
+                montos_grupo.append(
+                    f"${costo_comida_unitario * cant_pasajeros * tipo_cambio:,.0f} ARS (+{costo_comida_unitario * cant_pasajeros} USD)".replace(",", "."))
 
             if costo_transporte_unitario and costo_transporte_unitario > 0:
                 conceptos.append(f"Suplemento Transporte: {transporte_tipo}")
-                montos_persona.append(f"${costo_transporte_unitario * tipo_cambio:,.0f} ARS (+{costo_transporte_unitario} USD)".replace(",", "."))
-                montos_grupo.append(f"${costo_transporte_unitario * cant_pasajeros * tipo_cambio:,.0f} ARS (+{costo_transporte_unitario * cant_pasajeros} USD)".replace(",", "."))
+                montos_persona.append(
+                    f"${costo_transporte_unitario * tipo_cambio:,.0f} ARS (+{costo_transporte_unitario} USD)".replace(",", "."))
+                montos_grupo.append(
+                    f"${costo_transporte_unitario * cant_pasajeros * tipo_cambio:,.0f} ARS (+{costo_transporte_unitario * cant_pasajeros} USD)".replace(",", "."))
 
             conceptos.append(concepto_inscripcion)
-            montos_persona.append(f"${ars_inscripcion:,.0f} ARS".replace(",", "."))
+            montos_persona.append(
+                f"${ars_inscripcion:,.0f} ARS".replace(",", "."))
             montos_grupo.append(f"${total_ars:,.0f} ARS".replace(",", "."))
 
             conceptos.append("Total Paquete")
-            montos_persona.append(f"${total_unitario_pesos:,.0f} ARS".replace(",", "."))
-            montos_grupo.append(f"${total_grupo_pesos:,.0f} ARS".replace(",", "."))
+            montos_persona.append(
+                f"${total_unitario_pesos:,.0f} ARS".replace(",", "."))
+            montos_grupo.append(
+                f"${total_grupo_pesos:,.0f} ARS".replace(",", "."))
 
             desglose_data = {
                 "Concepto": conceptos,
@@ -654,7 +692,8 @@ with tab_exportar:
         with col_exp3:
             if st.button("📁 Guardar en 'Escritorio/Propuestas'", use_container_width=True, key=f"btn_guardar_carpeta_escritorio_{destino_slug}_{transporte_slug}"):
                 try:
-                    escritorio = os.path.join(os.path.expanduser("~"), "Desktop")
+                    escritorio = os.path.join(
+                        os.path.expanduser("~"), "Desktop")
                     carpeta_propuestas = os.path.join(escritorio, "Propuestas")
                     os.makedirs(carpeta_propuestas, exist_ok=True)
                     ruta_completa = os.path.join(
@@ -663,7 +702,8 @@ with tab_exportar:
                     with open(ruta_completa, "w", encoding="utf-8") as f:
                         f.write(contenido_archivo)
 
-                    st.success(f"¡Guardado correctamente en:\n{ruta_completa}!")
+                    st.success(
+                        f"¡Guardado correctamente en:\n{ruta_completa}!")
                 except Exception as e:
                     st.error(f"Error al guardar: {e}")
 
@@ -672,4 +712,5 @@ if st.session_state.get("historial"):
     st.markdown("---")
     st.markdown("### 🕒 Historial de Propuestas Generadas en esta Sesión")
     df_historial = pd.DataFrame(st.session_state["historial"])
-    st.dataframe(df_historial, use_container_width=True, hide_index=True, key="df_historial_sesion_table")
+    st.dataframe(df_historial, use_container_width=True,
+                 hide_index=True, key="df_historial_sesion_table")
